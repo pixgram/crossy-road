@@ -3,15 +3,20 @@ import * as THREE from "three";
 
 const counterDOM = document.getElementById("counter");
 const endDOM = document.getElementById("end");
-
 const scene = new THREE.Scene();
+const rightSideTexture = await new THREE.TextureLoader().loadAsync(
+  "./src/img/balogo-right.jpg"
+);
+const leftSideTexture = await new THREE.TextureLoader().loadAsync(
+  "./src/img/balogo-left.jpeg"
+);
 
 const distance = 500;
 const camera = new THREE.OrthographicCamera(
-  window.innerWidth / -2,
-  window.innerWidth / 2,
-  window.innerHeight / 2,
-  window.innerHeight / -2,
+  -window.innerWidth / 3,
+  window.innerWidth / 3,
+  window.innerHeight / 3,
+  -window.innerHeight / 3,
   0.1,
   10000
 );
@@ -28,12 +33,12 @@ camera.position.y = initialCameraPositionY;
 camera.position.x = initialCameraPositionX;
 camera.position.z = distance;
 
-const zoom = 2;
+const zoom = window.innerWidth < 500 ? 1.5 : 2;
 
 const chickenSize = 15;
 
 const positionWidth = 42;
-const columns = 17;
+const columns = 17; // 좌우로 움직일 수 있는 스탭
 const boardWidth = positionWidth * columns;
 
 const stepTime = 200; // Miliseconds it takes for the chicken to take a step forward, backward, left or right
@@ -101,10 +106,12 @@ scene.add(dirLight);
 dirLight.shadow.mapSize.width = 2048;
 dirLight.shadow.mapSize.height = 2048;
 var d = 500;
-dirLight.shadow.camera.left = -d;
-dirLight.shadow.camera.right = d;
-dirLight.shadow.camera.top = d;
-dirLight.shadow.camera.bottom = -d;
+dirLight.shadow.camera.left = -d * 2;
+dirLight.shadow.camera.right = d * 2;
+dirLight.shadow.camera.top = d * 2;
+dirLight.shadow.camera.bottom = -d * 2;
+dirLight.shadow.camera.near = 0.1;
+dirLight.shadow.camera.far = 1000;
 
 // var helper = new THREE.CameraHelper( dirLight.shadow.camera );
 // var helper = new THREE.CameraHelper( camera );
@@ -116,9 +123,10 @@ backLight.castShadow = true;
 scene.add(backLight);
 
 const laneTypes = ["car", "truck", "forest"];
-const laneSpeeds = [2, 2.5, 3];
+const laneSpeeds = [2, 2.5, 3, 4, 4.5, 5, 5.5, 8, 9.5, 10, 11, 12, 15];
 const vechicleColors = [0xa52523, 0xbdb638, 0x78b14b];
 const threeHeights = [20, 45, 60];
+let isKeyDown = false;
 
 const initaliseValues = () => {
   lanes = generateLanes();
@@ -167,6 +175,15 @@ function Texture(width, height, rects) {
   return new THREE.CanvasTexture(canvas);
 }
 
+function Coin() {
+  const coin = new THREE.Mesh(
+    new THREE.BoxGeometry(10, 10, 10),
+    new THREE.MeshLambertMaterial({ color: 0xff0000, flatShading: true })
+  );
+
+  return coin;
+}
+
 function Wheel() {
   const wheel = new THREE.Mesh(
     new THREE.BoxGeometry(12 * zoom, 33 * zoom, 12 * zoom),
@@ -183,7 +200,7 @@ function Car() {
 
   const main = new THREE.Mesh(
     new THREE.BoxGeometry(60 * zoom, 30 * zoom, 15 * zoom),
-    new THREE.MeshPhongMaterial({ color, flatShading: true })
+    new THREE.MeshPhongMaterial({ color, flatShading: true }) // 자동차 본체 색상
   );
   main.position.z = 12 * zoom;
   main.castShadow = true;
@@ -241,7 +258,6 @@ function Truck() {
   const truck = new THREE.Group();
   const color =
     vechicleColors[Math.floor(Math.random() * vechicleColors.length)];
-
   const base = new THREE.Mesh(
     new THREE.BoxGeometry(100 * zoom, 25 * zoom, 5 * zoom),
     new THREE.MeshLambertMaterial({ color: 0xb4c6fc, flatShading: true })
@@ -249,9 +265,21 @@ function Truck() {
   base.position.z = 10 * zoom;
   truck.add(base);
 
+  /**
+   * 2: 동승석
+   * 3: 운전석
+   * 4: 지붕
+   */
   const cargo = new THREE.Mesh(
     new THREE.BoxGeometry(75 * zoom, 35 * zoom, 40 * zoom),
-    new THREE.MeshPhongMaterial({ color: 0xb4c6fc, flatShading: true })
+    [
+      new THREE.MeshPhongMaterial({ color: 0xb4c6fc, flatShading: true }),
+      new THREE.MeshPhongMaterial({ color: 0xb4c6fc, flatShading: true }),
+      new THREE.MeshPhongMaterial({ map: rightSideTexture }), // 동승석
+      new THREE.MeshPhongMaterial({ map: leftSideTexture }), // 운전석
+      new THREE.MeshPhongMaterial({ color: 0xb4c6fc, flatShading: true }), // 지붕
+      new THREE.MeshPhongMaterial({ color: 0xb4c6fc, flatShading: true }),
+    ]
   );
   cargo.position.x = 15 * zoom;
   cargo.position.z = 30 * zoom;
@@ -439,7 +467,8 @@ function Lane(index) {
       this.direction = Math.random() >= 0.5;
 
       const occupiedPositions = new Set();
-      this.vechicles = [1, 2, 3].map(() => {
+      // 배열의 개수는 차량의 대수
+      this.vechicles = [1, 2, 3, 4, 5].map(() => {
         const vechicle = new Car();
         let position;
         do {
@@ -462,7 +491,8 @@ function Lane(index) {
       this.direction = Math.random() >= 0.5;
 
       const occupiedPositions = new Set();
-      this.vechicles = [1, 2].map(() => {
+      // 배열의 개수는 차량의 대수
+      this.vechicles = [1, 2, 3, 4, 5].map(() => {
         const vechicle = new Truck();
         let position;
         do {
@@ -502,19 +532,45 @@ document.getElementById("left").addEventListener("click", () => move("left"));
 document.getElementById("right").addEventListener("click", () => move("right"));
 
 window.addEventListener("keydown", (event) => {
-  if (event.keyCode == "38") {
-    // up arrow
-    move("forward");
-  } else if (event.keyCode == "40") {
-    // down arrow
-    move("backward");
-  } else if (event.keyCode == "37") {
-    // left arrow
-    move("left");
-  } else if (event.keyCode == "39") {
-    // right arrow
-    move("right");
+  if (isKeyDown) return;
+
+  switch (event.key) {
+    case "ArrowDown":
+      move("backward");
+      break;
+    case "ArrowUp":
+      move("forward");
+      break;
+    case "ArrowRight":
+      move("right");
+      break;
+    case "ArrowLeft":
+      move("left");
+      break;
+    default:
+      break;
   }
+
+  isKeyDown = true;
+});
+
+window.addEventListener("keyup", (event) => {
+  isKeyDown = false;
+});
+
+window.addEventListener("resize", () => {
+  const aspect = window.innerWidth / window.innerHeight;
+
+  camera.left = -window.innerWidth / 3;
+  camera.right = window.innerWidth / 3;
+  camera.top = window.innerHeight / 3;
+  camera.bottom = -window.innerWidth / 3;
+
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  lanes.forEach((lane) => scene.remove(lane.mesh));
+  initaliseValues();
 });
 
 function move(direction) {
@@ -587,9 +643,10 @@ function animate(timestamp) {
   lanes.forEach((lane) => {
     if (lane.type === "car" || lane.type === "truck") {
       const aBitBeforeTheBeginingOfLane =
-        (-boardWidth * zoom) / 2 - positionWidth * 2 * zoom;
+        -boardWidth * zoom * 0.9 - positionWidth * 2 * zoom;
       const aBitAfterTheEndOFLane =
-        (boardWidth * zoom) / 2 + positionWidth * 2 * zoom;
+        boardWidth * zoom * 0.9 + positionWidth * 2 * zoom;
+
       lane.vechicles.forEach((vechicle) => {
         if (lane.direction) {
           vechicle.position.x =
@@ -629,7 +686,8 @@ function animate(timestamp) {
         break;
       }
       case "backward": {
-        positionY = currentLane * positionWidth * zoom - moveDeltaDistance;
+        const positionY =
+          currentLane * positionWidth * zoom - moveDeltaDistance;
         camera.position.y = initialCameraPositionY + positionY;
         dirLight.position.y = initialDirLightPositionY + positionY;
         chicken.position.y = positionY;
