@@ -3,7 +3,6 @@ import * as THREE from "three";
 
 const counterDOM = document.getElementById("counter");
 const coinsDOM = document.getElementById("coins");
-let totalGetCoins = 0;
 const endDOM = document.getElementById("end");
 const scene = new THREE.Scene();
 const rightSideTexture = await new THREE.TextureLoader().loadAsync(
@@ -15,6 +14,8 @@ const leftSideTexture = await new THREE.TextureLoader().loadAsync(
 const coinTexture = await new THREE.TextureLoader().loadAsync(
   "./src/img/star-coin.png"
 );
+let totalGetCoins = 0;
+let isGameOver = false;
 
 const distance = 500;
 const camera = new THREE.OrthographicCamera(
@@ -573,6 +574,7 @@ document.querySelector("#retry").addEventListener("click", () => {
   totalGetCoins = 0;
   coinsDOM.innerHTML = totalGetCoins;
   counterDOM.innerHTML = currentLane;
+  isGameOver = false;
 });
 
 document
@@ -630,6 +632,7 @@ window.addEventListener("resize", () => {
 });
 
 function move(direction) {
+  if (isGameOver) return;
   const finalPositions = moves.reduce(
     (position, move) => {
       if (move === "forward")
@@ -816,6 +819,7 @@ function animate(timestamp) {
       const carMaxX = vechicle.position.x + (vechicleLength * zoom) / 2;
       if (chickenMaxX > carMinX && chickenMinX < carMaxX) {
         endDOM.style.visibility = "visible";
+        isGameOver = true;
       }
     });
   }
