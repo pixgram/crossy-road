@@ -2,6 +2,8 @@ import "./style.css";
 import * as THREE from "three";
 
 const counterDOM = document.getElementById("counter");
+const coinsDOM = document.getElementById("coins");
+let totalGetCoins = 0;
 const endDOM = document.getElementById("end");
 const scene = new THREE.Scene();
 const rightSideTexture = await new THREE.TextureLoader().loadAsync(
@@ -9,6 +11,9 @@ const rightSideTexture = await new THREE.TextureLoader().loadAsync(
 );
 const leftSideTexture = await new THREE.TextureLoader().loadAsync(
   "./src/img/balogo-left.jpeg"
+);
+const coinTexture = await new THREE.TextureLoader().loadAsync(
+  "./src/img/star-coin.png"
 );
 
 const distance = 500;
@@ -33,7 +38,7 @@ camera.position.y = initialCameraPositionY;
 camera.position.x = initialCameraPositionX;
 camera.position.z = distance;
 
-const zoom = window.innerWidth < 500 ? 1.5 : 2;
+const zoom = window.innerWidth < 500 ? 1.5 : 2.5;
 
 const chickenSize = 15;
 
@@ -85,6 +90,22 @@ const addLane = () => {
   const index = lanes.length;
   const lane = new Lane(index);
   lane.mesh.position.y = index * positionWidth * zoom;
+
+  // 코인 추가하기
+  if (lane.type === "forest") {
+    const position = Math.floor(Math.random() * columns);
+
+    if (!lane.occupiedPositions.has(position)) {
+      const coin = new Coin();
+      coin.position.x =
+        (position * positionWidth + positionWidth / 2) * zoom -
+        (boardWidth * zoom) / 2;
+
+      lane.coin = coin;
+      lane.mesh.add(coin);
+    }
+  }
+
   scene.add(lane.mesh);
   lanes.push(lane);
 };
@@ -103,8 +124,8 @@ dirLight.castShadow = true;
 dirLight.target = chicken;
 scene.add(dirLight);
 
-dirLight.shadow.mapSize.width = 2048;
-dirLight.shadow.mapSize.height = 2048;
+dirLight.shadow.mapSize.width = 2500;
+dirLight.shadow.mapSize.height = 2500;
 var d = 500;
 dirLight.shadow.camera.left = -d * 2;
 dirLight.shadow.camera.right = d * 2;
@@ -148,6 +169,23 @@ const initaliseValues = () => {
 
   dirLight.position.x = initialDirLightPositionX;
   dirLight.position.y = initialDirLightPositionY;
+
+  // 코인 추가하기
+  lanes.map((lane) => {
+    if (lane.type === "forest") {
+      const position = Math.floor(Math.random() * columns);
+
+      if (!lane.occupiedPositions.has(position)) {
+        const coin = new Coin();
+        coin.position.x =
+          (position * positionWidth + positionWidth / 2) * zoom -
+          (boardWidth * zoom) / 2;
+
+        lane.coin = coin;
+        lane.mesh.add(coin);
+      }
+    }
+  });
 };
 
 initaliseValues();
@@ -157,7 +195,7 @@ const renderer = new THREE.WebGLRenderer({
   antialias: true,
 });
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.tye = THREE.PCFSoftShadowMap;
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
@@ -173,15 +211,6 @@ function Texture(width, height, rects) {
     context.fillRect(rect.x, rect.y, rect.w, rect.h);
   });
   return new THREE.CanvasTexture(canvas);
-}
-
-function Coin() {
-  const coin = new THREE.Mesh(
-    new THREE.BoxGeometry(10, 10, 10),
-    new THREE.MeshLambertMaterial({ color: 0xff0000, flatShading: true })
-  );
-
-  return coin;
 }
 
 function Wheel() {
@@ -357,6 +386,30 @@ function Three() {
   return three;
 }
 
+function Coin() {
+  const coin = new THREE.Mesh(new THREE.CylinderGeometry(20, 20, 8, 32), [
+    new THREE.MeshLambertMaterial({
+      color: 0xffff00,
+      flatShading: true,
+    }),
+    new THREE.MeshLambertMaterial({
+      color: 0xffff00,
+      flatShading: true,
+      map: coinTexture,
+    }),
+    new THREE.MeshLambertMaterial({
+      color: 0xffff00,
+      flatShading: true,
+    }),
+  ]);
+  coin.castShadow = true;
+  coin.receiveShadow = false;
+  coin.rotation.x = Math.PI / 2;
+  coin.position.z = 4 * zoom;
+
+  return coin;
+}
+
 function Chicken() {
   const chicken = new THREE.Group();
 
@@ -517,6 +570,9 @@ document.querySelector("#retry").addEventListener("click", () => {
   lanes.forEach((lane) => scene.remove(lane.mesh));
   initaliseValues();
   endDOM.style.visibility = "hidden";
+  totalGetCoins = 0;
+  coinsDOM.innerHTML = totalGetCoins;
+  counterDOM.innerHTML = currentLane;
 });
 
 document
@@ -646,7 +702,6 @@ function animate(timestamp) {
         -boardWidth * zoom * 0.9 - positionWidth * 2 * zoom;
       const aBitAfterTheEndOFLane =
         boardWidth * zoom * 0.9 + positionWidth * 2 * zoom;
-
       lane.vechicles.forEach((vechicle) => {
         if (lane.direction) {
           vechicle.position.x =
@@ -755,6 +810,7 @@ function animate(timestamp) {
     const chickenMinX = chicken.position.x - (chickenSize * zoom) / 2;
     const chickenMaxX = chicken.position.x + (chickenSize * zoom) / 2;
     const vechicleLength = { car: 60, truck: 105 }[lanes[currentLane].type];
+
     lanes[currentLane].vechicles.forEach((vechicle) => {
       const carMinX = vechicle.position.x - (vechicleLength * zoom) / 2;
       const carMaxX = vechicle.position.x + (vechicleLength * zoom) / 2;
@@ -763,6 +819,25 @@ function animate(timestamp) {
       }
     });
   }
+
+  // Hit coin
+  if (lanes[currentLane].type === "forest") {
+    const chickenX = chicken.position.x;
+
+    if (!!lanes[currentLane].coin) {
+      const lane = lanes[currentLane];
+      const coin = lane.coin;
+      const coinX = coin.position.x;
+
+      if (chickenX === coinX) {
+        lane.mesh.remove(lane.coin);
+        totalGetCoins += 1;
+        coinsDOM.innerHTML = totalGetCoins;
+        delete lane.coin;
+      }
+    }
+  }
+
   renderer.render(scene, camera);
 }
 
