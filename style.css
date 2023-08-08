@@ -20,6 +20,11 @@ button {
   display: flex;
   gap: 20px;
 }
+@media (max-width: 760px) {
+  .counter-wrapper {
+    font-size: 14px;
+  }
+}
 .counter-wrapper > div {
   display: flex;
 }
