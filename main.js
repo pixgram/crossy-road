@@ -11,9 +11,17 @@ const rightSideTexture = await new THREE.TextureLoader().loadAsync(
 const leftSideTexture = await new THREE.TextureLoader().loadAsync(
   "./src/img/balogo-left.jpeg"
 );
+const ad1LeftTexture = await new THREE.TextureLoader().loadAsync(
+  "./src/img/ad1-left.jpeg"
+);
+const ad1RightTexture = await new THREE.TextureLoader().loadAsync(
+  "./src/img/ad1-right.jpeg"
+);
 const coinTexture = await new THREE.TextureLoader().loadAsync(
   "./src/img/star-coin.png"
 );
+const truckLeftTexture = [leftSideTexture, ad1LeftTexture];
+const truckRightTexture = [rightSideTexture, ad1RightTexture];
 let totalGetCoins = 0;
 let isGameOver = false;
 
@@ -305,8 +313,18 @@ function Truck() {
     [
       new THREE.MeshPhongMaterial({ color: 0xb4c6fc, flatShading: true }),
       new THREE.MeshPhongMaterial({ color: 0xb4c6fc, flatShading: true }),
-      new THREE.MeshPhongMaterial({ map: rightSideTexture }), // 동승석
-      new THREE.MeshPhongMaterial({ map: leftSideTexture }), // 운전석
+      // new THREE.MeshPhongMaterial({ map: rightSideTexture }), // 동승석
+      // new THREE.MeshPhongMaterial({ map: leftSideTexture }), // 운전석
+      new THREE.MeshPhongMaterial({
+        map: truckRightTexture[
+          Math.floor(Math.random() * truckRightTexture.length)
+        ],
+      }), // 운전석
+      new THREE.MeshPhongMaterial({
+        map: truckLeftTexture[
+          Math.floor(Math.random() * truckLeftTexture.length)
+        ],
+      }), // 운전석
       new THREE.MeshPhongMaterial({ color: 0xb4c6fc, flatShading: true }), // 지붕
       new THREE.MeshPhongMaterial({ color: 0xb4c6fc, flatShading: true }),
     ]
