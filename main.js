@@ -5,21 +5,30 @@ const counterDOM = document.getElementById("counter");
 const coinsDOM = document.getElementById("coins");
 const endDOM = document.getElementById("end");
 const scene = new THREE.Scene();
-const rightSideTexture = await new THREE.TextureLoader().loadAsync(
-  "./src/img/balogo-right.jpg"
-);
-const leftSideTexture = await new THREE.TextureLoader().loadAsync(
-  "./src/img/balogo-left.jpeg"
-);
-const ad1LeftTexture = await new THREE.TextureLoader().loadAsync(
-  "./src/img/ad1-left.jpeg"
-);
-const ad1RightTexture = await new THREE.TextureLoader().loadAsync(
-  "./src/img/ad1-right.jpeg"
-);
-const coinTexture = await new THREE.TextureLoader().loadAsync(
-  "./src/img/star-coin.png"
-);
+let rightSideTexture = "";
+let leftSideTexture = "";
+let ad1LeftTexture = "";
+let ad1RightTexture = "";
+let coinTexture = "";
+
+async function loadTextures() {
+  rightSideTexture = await new THREE.TextureLoader().loadAsync(
+    "./src/img/balogo-right.jpg"
+  );
+  leftSideTexture = await new THREE.TextureLoader().loadAsync(
+    "./src/img/balogo-left.jpeg"
+  );
+  ad1LeftTexture = await new THREE.TextureLoader().loadAsync(
+    "./src/img/ad1-left.jpeg"
+  );
+  ad1RightTexture = await new THREE.TextureLoader().loadAsync(
+    "./src/img/ad1-right.jpeg"
+  );
+  coinTexture = await new THREE.TextureLoader().loadAsync(
+    "./src/img/star-coin.png"
+  );
+}
+
 const truckLeftTexture = [leftSideTexture, ad1LeftTexture];
 const truckRightTexture = [rightSideTexture, ad1RightTexture];
 let totalGetCoins = 0;
